@@ -1,0 +1,113 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220"><meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest"><title>Flight Test Logbook V2</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#0b1220;color:#fff;padding:15px 16px;position:sticky;top:0;z-index:2}header h1{margin:0;font-size:20px}
+main{max-width:850px;margin:auto;padding:14px 14px 90px}.page{display:none}.page.active{display:block}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ccc;display:flex;overflow:auto;z-index:3}nav button{min-width:75px;border:0;background:#fff;padding:10px 3px;font-size:10px}nav .on{font-weight:bold}
+.card{background:#fff;border:1px solid #d8e0ea;border-radius:14px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{font-size:12px;font-weight:bold;color:#475569;display:block;margin:7px 0 4px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font:inherit}textarea{min-height:70px}
+button{border:0;border-radius:9px;padding:10px 13px;background:#0b1220;color:white;font-weight:bold}.row{display:flex;gap:8px;flex-wrap:wrap}.row button{flex:1}.secondary{background:#e2e8f0;color:#172033}
+.item{border-top:1px solid #e2e8f0;padding:11px 0}.item:first-child{border-top:0}.muted{color:#64748b;font-size:12px}.empty{text-align:center;color:#64748b;padding:18px}
+.photoGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.photo{background:#f8fafc;border:1px solid #ddd;border-radius:9px;overflow:hidden}.photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}.photo p{padding:7px;margin:0;font-size:11px}
+.badge{display:inline-block;border-radius:999px;padding:4px 7px;font-size:10px;font-weight:bold}.PASS{background:#dcfce7;color:#166534}.FAIL{background:#fee2e2;color:#991b1b}.ABORT{background:#ffedd5;color:#9a3412}.PARTIAL{background:#fef3c7;color:#92400e}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}@media print{header,nav,.noPrint,button,input,select,textarea{display:none!important}.page{display:none!important}#report{display:block!important}}
+</style></head><body>
+<header><h1>Flight Test Logbook V2</h1></header><main>
+
+<section id="home" class="page active"><h2>Dashboard</h2>
+<div class="card"><b id="stats">0 flights · 0 test points · 0 photos · 0 open issues</b></div>
+<div class="card"><h3>Workflow</h3><p>Test Day → Preflight → Flight → Test Point → Postflight → Photos → Report</p></div>
+</section>
+
+<section id="day" class="page"><h2>Test Day</h2><div class="card"><div class="grid">
+<div><label>Date</label><input id="date" type="date"></div><div><label>Program</label><input id="program"></div>
+<div><label>Test Article</label><input id="article"></div><div><label>Location / Range</label><input id="location"></div>
+<div><label>Test Lead</label><input id="lead"></div><div><label>Pilot / Operator</label><input id="pilot"></div>
+<div><label>Weather</label><input id="weather"></div><div><label>Wind</label><input id="wind"></div>
+<div class="full"><label>Objectives</label><textarea id="objectives"></textarea></div><div class="full"><label>Safety / Hazards / Mitigations</label><textarea id="safety"></textarea></div>
+</div><button onclick="saveDay()">Save Test Day</button></div>
+<div class="card"><h3>Test Day Photos</h3><button onclick="addPhoto('Test Day')">📷 Add / Take Photo</button><div id="dayPhotos" class="photoGrid"></div></div></section>
+
+<section id="aircraft" class="page"><h2>Aircraft</h2><div class="card"><div class="grid">
+<div><label>Tail / ID</label><input id="tail"></div><div><label>Airframe</label><input id="frame"></div>
+<div><label>Motor / Prop</label><input id="motor"></div><div><label>Battery</label><input id="battery"></div>
+<div><label>Flight Controller</label><input id="fc"></div><div><label>Firmware</label><input id="fw"></div>
+<div><label>Radio / Receiver</label><input id="radio"></div><div><label>Payload</label><input id="payload"></div>
+<div><label>Weight</label><input id="weight"></div><div><label>CG</label><input id="cg"></div></div><button onclick="saveAircraft()">Save Aircraft</button></div><div id="airList" class="card"></div>
+<div class="card"><h3>Aircraft Photos</h3><button onclick="addPhoto('Aircraft')">📷 Add / Take Photo</button><div id="airPhotos" class="photoGrid"></div></div></section>
+
+<section id="preflight" class="page"><h2>Preflight</h2><div class="card" id="checks"></div>
+<div class="card"><label>Notes</label><textarea id="preNotes"></textarea><button onclick="savePre()">Save Preflight</button></div>
+<div class="card"><h3>Preflight Photos</h3><button onclick="addPhoto('Preflight')">📷 Add / Take Photo</button><div id="prePhotos" class="photoGrid"></div></div></section>
+
+<section id="flight" class="page"><h2>Flight</h2><div class="card"><div id="timer" style="font-size:34px;text-align:center;font-weight:bold">00:00:00</div>
+<div class="row"><button onclick="startFlight()">Start Flight</button><button onclick="endFlight()">End Flight</button></div><div class="grid">
+<div><label>Flight #</label><input id="flightNo"></div><div><label>Aircraft</label><input id="flightAircraft"></div>
+<div><label>Pilot</label><input id="flightPilot"></div><div><label>Test Card</label><input id="flightCard"></div>
+<div><label>Battery / Fuel</label><input id="flightPower"></div><div><label>Max Altitude</label><input id="flightAlt"></div>
+<div><label>Max Distance</label><input id="flightDist"></div><div><label>GPS</label><input id="flightGps"></div>
+<div class="full"><label>Objective / Maneuvers</label><textarea id="flightObj"></textarea></div><div class="full"><label>Observations / Anomalies</label><textarea id="flightNotes"></textarea></div></div><button onclick="saveFlight()">Save Flight</button></div>
+<div class="card"><h3>Flight Photos</h3><button onclick="addPhoto('Flight')">📷 Add / Take Photo</button><div id="flightPhotos" class="photoGrid"></div></div><div id="flightList" class="card"></div></section>
+
+<section id="point" class="page"><h2>Test Point</h2><div class="card"><div class="grid">
+<div><label>Card</label><input id="pointCard"></div><div><label>Point ID</label><input id="pointId" placeholder="TP-01"></div>
+<div><label>Expected</label><input id="expected"></div><div><label>Actual</label><input id="actual"></div>
+<div><label>Units</label><input id="units"></div><div><label>Result</label><select id="result"><option>PASS</option><option>PARTIAL</option><option>FAIL</option><option>ABORT</option><option>N/A</option></select></div>
+<div class="full"><label>Procedure / Notes</label><textarea id="pointNotes"></textarea></div><div class="full"><label>Corrective Action</label><textarea id="action"></textarea></div>
+</div><button onclick="savePoint()">Record Test Point</button></div>
+<div class="card"><h3>Test Point Photos</h3><button onclick="addPhoto('Test Point')">📷 Add / Take Photo</button><div id="pointPhotos" class="photoGrid"></div></div><div id="pointList" class="card"></div></section>
+
+<section id="post" class="page"><h2>Postflight</h2><div class="card"><div class="grid">
+<div><label>Flight #</label><input id="postFlight"></div><div><label>Completed By</label><input id="postBy"></div>
+<div><label>Aircraft Condition</label><select id="condition"><option>NORMAL</option><option>MINOR ISSUE</option><option>DAMAGED</option><option>GROUNDING</option></select></div><div><label>Data Downloaded</label><select id="data"><option>YES</option><option>NO</option></select></div>
+<div class="full"><label>Notes</label><textarea id="postNotes"></textarea></div></div><button onclick="savePost()">Save Postflight</button></div>
+<div class="card"><h3>Postflight Photos</h3><button onclick="addPhoto('Postflight')">📷 Add / Take Photo</button><div id="postPhotos" class="photoGrid"></div></div></section>
+
+<section id="issues" class="page"><h2>Discrepancies</h2><div id="issueList" class="card"></div>
+<div class="card"><h3>Discrepancy Photos</h3><button onclick="addPhoto('Discrepancy')">📷 Add / Take Photo</button><div id="issuePhotos" class="photoGrid"></div></div></section>
+
+<section id="photos" class="page"><h2>Photo Evidence</h2><div class="card"><p class="muted">Photos are resized to reduce storage. Use a caption to document what the image shows.</p>
+<label>Category</label><select id="photoCat"><option>Test Day</option><option>Aircraft</option><option>Preflight</option><option>Flight</option><option>Test Point</option><option>Discrepancy</option><option>Postflight</option></select>
+<label>Caption</label><input id="photoCaption" placeholder="Example: Elevator linkage after Flight 006">
+<button onclick="addPhoto(v('photoCat'))">📷 Add / Take Photo</button></div><div id="allPhotos" class="card"></div></section>
+
+<section id="report" class="page"><h2>End-of-Day Report</h2><div id="reportBody"></div><div class="card noPrint"><button onclick="window.print()">Print / Save PDF</button> <button onclick="backup()">Export Backup</button> <button onclick="document.getElementById('restore').click()">Restore</button><input id="restore" type="file" accept=".json" hidden></div></section>
+</main>
+<nav><button onclick="show('home')">Home</button><button onclick="show('day')">Day</button><button onclick="show('aircraft')">Aircraft</button><button onclick="show('preflight')">Pre</button><button onclick="show('flight')">Flight</button><button onclick="show('point')">Point</button><button onclick="show('post')">Post</button><button onclick="show('issues')">Issues</button><button onclick="show('photos')">Photos</button><button onclick="show('report')">Report</button></nav>
+<input id="photoFile" type="file" accept="image/*" capture="environment" hidden>
+<script>
+const KEY='ftlogbook_v2_photos';let db=JSON.parse(localStorage.getItem(KEY)||'{"day":{},"aircraft":[],"pre":[],"flights":[],"points":[],"post":[],"issues":[],"photos":[]}'),start=0,timer;
+const $=id=>document.getElementById(id),v=id=>$(id).value;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('Storage is full. Export a backup and remove older photos.')}render()}
+function show(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');render()}
+function saveDay(){db.day={date:v('date'),program:v('program'),article:v('article'),location:v('location'),lead:v('lead'),pilot:v('pilot'),weather:v('weather'),wind:v('wind'),objectives:v('objectives'),safety:v('safety')};save();alert('Saved')}
+function saveAircraft(){db.aircraft.push({tail:v('tail'),frame:v('frame'),motor:v('motor'),battery:v('battery'),fc:v('fc'),fw:v('fw'),radio:v('radio'),payload:v('payload'),weight:v('weight'),cg:v('cg')});save();alert('Saved')}
+const checkNames=['Airframe inspection','Control surfaces','Servo response','Battery / power','Radio link','Failsafe','GPS / navigation','Flight controller','Telemetry','Propulsion','Launch / recovery','Safety equipment'];
+function renderChecks(){ $('checks').innerHTML='<h3>Preflight Checklist</h3>'+checkNames.map((x,i)=>`<div class=item><b>${x}</b><select id="chk${i}"><option>PASS</option><option>FAIL</option><option>N/A</option></select></div>`).join('') }
+function savePre(){let c=checkNames.map((x,i)=>({item:x,result:$('chk'+i).value}));db.pre.push({checks:c,notes:v('preNotes'),time:new Date().toISOString()});save();alert('Preflight saved')}
+function startFlight(){start=Date.now();timer=setInterval(()=>{$('timer').textContent=new Date(Math.floor((Date.now()-start)/1000)*1000).toISOString().slice(11,19)},500)}
+function endFlight(){clearInterval(timer)}
+function saveFlight(){db.flights.push({number:v('flightNo'),aircraft:v('flightAircraft'),pilot:v('flightPilot'),card:v('flightCard'),power:v('flightPower'),alt:v('flightAlt'),dist:v('flightDist'),gps:v('flightGps'),objective:v('flightObj'),notes:v('flightNotes'),time:new Date().toISOString()});save();alert('Flight saved')}
+function savePoint(){let x={card:v('pointCard'),point:v('pointId'),expected:v('expected'),actual:v('actual'),units:v('units'),result:v('result'),notes:v('pointNotes'),action:v('action'),time:new Date().toISOString()};db.points.push(x);if(x.result==='FAIL'||x.result==='ABORT')db.issues.push({card:x.card,point:x.point,result:x.result,description:x.notes,action:x.action,status:'OPEN'});save();alert('Test point saved')}
+function savePost(){db.post.push({flight:v('postFlight'),by:v('postBy'),condition:v('condition'),data:v('data'),notes:v('postNotes')});save();alert('Postflight saved')}
+function addPhoto(category){window.photoCategory=category;$('photoFile').value='';$('photoFile').click()}
+function resize(file){return new Promise((ok,no)=>{let r=new FileReader;r.onload=()=>{let im=new Image;im.onload=()=>{let scale=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*scale;c.height=im.height*scale;c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.78))};im.src=r.result};r.onerror=no;r.readAsDataURL(file)})}
+$('photoFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;let cap=v('photoCaption')||prompt('Photo caption / note','')||'';db.photos.push({category:window.photoCategory,caption:cap,data:await resize(f),time:new Date().toISOString()});$('photoCaption').value='';save();alert('Photo added')}
+function photos(cat){let a=db.photos.filter(x=>x.category===cat);return a.length?a.map(x=>`<div class=photo><img src="${x.data}"><p><b>${x.category}</b><br>${x.caption||''}</p></div>`).join(''):'<div class=empty>No photos</div>'}
+function backup(){let b=new Blob([JSON.stringify(db)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='flight-test-photo-backup.json';a.click()}
+$('restore').onchange=e=>{let r=new FileReader;r.onload=()=>{try{db=JSON.parse(r.result);save();alert('Restored')}catch(_){alert('Invalid backup')}};r.readAsText(e.target.files[0])}
+function render(){renderChecks();$('stats').textContent=`${db.flights.length} flights · ${db.points.length} test points · ${db.photos.length} photos · ${db.issues.filter(x=>x.status==='OPEN').length} open issues`;
+$('airList').innerHTML=db.aircraft.map(x=>`<div class=item><b>${x.tail||''}</b> — ${x.frame||''}<div class=muted>${x.motor||''} · ${x.battery||''} · ${x.fc||''} · ${x.fw||''}</div></div>`).join('')||'<div class=empty>No aircraft</div>';
+$('flightList').innerHTML=db.flights.map(x=>`<div class=item><b>Flight ${x.number||''}</b> — ${x.aircraft||''}<div>${x.objective||''}</div><div class=muted>${x.alt||''} · ${x.dist||''}</div></div>`).join('')||'<div class=empty>No flights</div>';
+$('pointList').innerHTML=db.points.map(x=>`<div class=item><span class="badge ${x.result}">${x.result}</span> <b>${x.card||''}</b> ${x.point||''}<div>Expected ${x.expected||''} · Actual ${x.actual||''} ${x.units||''}</div><div>${x.notes||''}</div></div>`).join('')||'<div class=empty>No test points</div>';
+$('issueList').innerHTML=db.issues.map(x=>`<div class=item><span class="badge ${x.result}">${x.result}</span> <b>${x.card||''}</b> — ${x.point||''}<div>${x.description||''}</div><div>Action: ${x.action||''}</div><div>Status: ${x.status}</div></div>`).join('')||'<div class=empty>No discrepancies</div>';
+$('dayPhotos').innerHTML=photos('Test Day');$('airPhotos').innerHTML=photos('Aircraft');$('prePhotos').innerHTML=photos('Preflight');$('flightPhotos').innerHTML=photos('Flight');$('pointPhotos').innerHTML=photos('Test Point');$('postPhotos').innerHTML=photos('Postflight');$('issuePhotos').innerHTML=photos('Discrepancy');
+$('allPhotos').innerHTML=db.photos.length?'<div class=photoGrid>'+db.photos.map(x=>`<div class=photo><img src="${x.data}"><p><b>${x.category}</b><br>${x.caption||''}</p></div>`).join('')+'</div>':'<div class=empty>No photos</div>';
+$('reportBody').innerHTML=`<div class=card><h3>Test Day Report</h3><p><b>Date:</b> ${db.day.date||''}<br><b>Program:</b> ${db.day.program||''}<br><b>Article:</b> ${db.day.article||''}<br><b>Location:</b> ${db.day.location||''}<br><b>Lead:</b> ${db.day.lead||''}<br><b>Pilot:</b> ${db.day.pilot||''}</p><p>Flights: ${db.flights.length} · Test Points: ${db.points.length} · PASS: ${db.points.filter(x=>x.result==='PASS').length} · FAIL: ${db.points.filter(x=>x.result==='FAIL').length} · ABORT: ${db.points.filter(x=>x.result==='ABORT').length}</p><h3>Photo Evidence</h3><div class=photoGrid>${db.photos.map(x=>`<div class=photo><img src="${x.data}"><p><b>${x.category}</b><br>${x.caption||''}</p></div>`).join('')}</div></div>`}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});render();
+</script></body></html>
